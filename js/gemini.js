@@ -5,8 +5,8 @@
 
 const GeminiClient = (() => {
     const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-    const MODEL_FLASH = 'gemini-1.5-flash';
-    const MODEL_PRO = 'gemini-1.5-flash';
+    const MODEL_FLASH = 'gemini-1.5-flash-8b';
+    const MODEL_PRO = 'gemini-1.5-flash-8b';
 
     let _apiKey = null;
 
