@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0d0d1a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="うら名刺">
+  <meta name="description" content="会社には『進捗』スマホには『真実』を。営業マンの本音を管理する秘密の名刺アプリ">
+  <title>うら名刺アプリ — 会社には『進捗』スマホには『真実』を</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="icon" href="./icons/icon-192.png">
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+
+<body>
+  <div id="app">
+
+    <!-- ===================== ホーム ===================== -->
+    <div id="screen-home" class="screen active">
+      <div class="page-header" style="align-items: flex-start;">
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <img src="./icons/icon-192.png" alt="うら名刺"
+            style="width: 56px; height: 56px; border-radius: 14px; box-shadow: 0 4px 16px rgba(30, 58, 138, 0.15);">
+          <div>
+            <h1 class="page-title"><span>うら</span>名刺</h1>
+            <div class="page-subtitle">会社には『進捗』スマホには『真実』を。</div>
+          </div>
+        </div>
+        <div id="api-key-status" class="api-key-status disconnected">未設定</div>
+      </div>
+
+      <!-- 今日の商談バナー -->
+      <div id="today-banner" class="meeting-banner" style="display:none">
+        <div class="meeting-banner-icon">⚔️</div>
+        <div class="meeting-banner-info">
+          <div class="meeting-banner-title">今日の商談</div>
+          <div class="meeting-banner-name" id="banner-name"></div>
+          <div class="meeting-banner-time" id="banner-time">
+            <span id="banner-company" style="color:var(--text-muted);font-size:12px"></span>
+          </div>
+        </div>
+        <div class="meeting-banner-caret">›</div>
+      </div>
+
+      <!-- 統計バー -->
+      <div class="stats-bar">
+        <div class="stat-box">
+          <div class="stat-value" id="stat-contacts">0</div>
+          <div class="stat-label">人脈</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="stat-meetings">0</div>
+          <div class="stat-label">今後の商談</div>
+        </div>
+      </div>
+
+      <!-- コンタクトリスト -->
+      <div class="section">
+        <div class="section-label">最近のコンタクト</div>
+        <div class="contact-list" id="home-contact-list"></div>
+      </div>
+    </div>
+
+    <!-- ===================== 詳細 ===================== -->
+    <div id="screen-detail" class="screen">
+      <div class="detail-header">
+        <button class="detail-back" id="btn-back-detail">‹ 戻る</button>
+        <div class="detail-avatar-row">
+          <div class="detail-avatar" id="detail-avatar">?</div>
+          <div>
+            <div class="detail-name" id="detail-name"></div>
+            <div class="detail-company" id="detail-company"></div>
+            <div class="detail-title" id="detail-pos"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- アクションボタン -->
+      <div class="detail-actions">
+        <button class="btn-action gold" id="btn-edit-contact">
+          <span class="btn-icon">✏️</span>編集
+        </button>
+        <button class="btn-action" id="btn-add-meeting">
+          <span class="btn-icon">📅</span>商談追加
+        </button>
+        <button class="btn-action" id="btn-delete-contact" style="color:var(--red)">
+          <span class="btn-icon">🗑️</span>削除
+        </button>
+      </div>
+
+      <!-- AIブリーフィング -->
+      <div id="ai-panel" class="ai-panel" style="display:none">
+        <div class="ai-panel-header">
+          <span>🤖</span> Gemini 参謀
+          <button id="ai-briefing-btn"
+            style="margin-left:auto;background:none;border:1px solid rgba(162,155,254,0.3);border-radius:20px;color:var(--purple);font-size:12px;padding:4px 12px;cursor:pointer;font-family:var(--font-jp)">分析</button>
+        </div>
+        <div class="ai-panel-content" id="ai-panel-content"
+          style="font-size:13px;color:var(--text-secondary);line-height:1.7">
+          ブリーフィングを生成するには「分析」をタップしてください。
+        </div>
+      </div>
+
+      <!-- 名刺画像 -->
+      <div class="card-image-section">
+        <div class="section-label">名刺</div>
+        <div class="card-image-box">
+          <div id="card-image-area" class="card-image-placeholder">
+            <div class="ph-icon">📇</div>
+            <div>名刺画像なし</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4分類 -->
+      <div class="four-sections">
+        <!-- 地雷 -->
+        <div class="section-card jirai">
+          <div class="section-card-header"
+            onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none'">
+            <div class="section-card-title"><span class="section-card-icon">💣</span>地雷</div>
+            <div class="section-card-count" id="section-count-jirai">0</div>
+          </div>
+          <div class="section-card-body" id="section-body-jirai" style="display:flex;flex-direction:column;gap:8px">
+          </div>
+        </div>
+        <!-- フック -->
+        <div class="section-card hook">
+          <div class="section-card-header"
+            onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none'">
+            <div class="section-card-title"><span class="section-card-icon">🎣</span>フック</div>
+            <div class="section-card-count" id="section-count-hook">0</div>
+          </div>
+          <div class="section-card-body" id="section-body-hook" style="display:flex;flex-direction:column;gap:8px">
+          </div>
+        </div>
+        <!-- 相関図 -->
+        <div class="section-card map">
+          <div class="section-card-header"
+            onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none'">
+            <div class="section-card-title"><span class="section-card-icon">🕸️</span>相関図</div>
+            <div class="section-card-count" id="section-count-map">0</div>
+          </div>
+          <div class="section-card-body" id="section-body-map" style="display:flex;flex-direction:column;gap:8px"></div>
+        </div>
+        <!-- 次の一手 -->
+        <div class="section-card next">
+          <div class="section-card-header"
+            onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'flex':'none'">
+            <div class="section-card-title"><span class="section-card-icon">⚡</span>次の一手</div>
+            <div class="section-card-count" id="section-count-next">0</div>
+          </div>
+          <div class="section-card-body" id="section-body-next" style="display:flex;flex-direction:column;gap:8px">
+          </div>
+        </div>
+      </div>
+
+      <!-- 商談予定 -->
+      <div class="meeting-section">
+        <div class="section-label">商談予定</div>
+        <div class="meeting-list" id="meeting-list"></div>
+      </div>
+
+      <!-- メモ入力 -->
+      <div class="form-section">
+        <div class="section-label">商談メモ（音声 or テキスト）</div>
+        <textarea class="form-textarea" id="voice-memo-detail" placeholder="商談後に気づいたことを入力...（音声入力可）"
+          rows="4"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="voice-btn" id="voice-btn-detail" style="flex:1">
+            <span class="voice-icon">🎙️</span>音声入力
+          </button>
+          <button class="btn-secondary" id="btn-save-memo" style="flex:1">💾 保存</button>
+          <button class="btn-secondary" id="btn-analyze-memo"
+            style="flex:1.5;color:var(--purple);border-color:rgba(162,155,254,0.25)">🤖 AIで分類</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== 新規登録 ===================== -->
+    <div id="screen-new" class="screen">
+      <div class="page-header">
+        <button class="detail-back" id="btn-back-new">‹ キャンセル</button>
+        <h1 class="page-title" style="font-size:20px">新規登録</h1>
+      </div>
+
+      <!-- 名刺撮影 -->
+      <div class="form-section">
+        <div class="form-label">名刺（撮影 or 選択）</div>
+        <div class="camera-area" id="camera-area">
+          <div class="camera-icon">📷</div>
+          <div class="camera-label">名刺を撮影 / 選択</div>
+        </div>
+        <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none">
+        <input type="hidden" id="new-card-image">
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;text-align:center">
+          Gemini APIキー設定時は自動OCRで情報を入力します
+        </div>
+      </div>
+
+      <!-- 基本情報 -->
+      <div class="form-section">
+        <div class="form-label">基本情報</div>
+        <div class="form-group">
+          <div class="form-label">氏名 <span style="color:var(--red)">*</span></div>
+          <input class="form-input" id="new-name" type="text" placeholder="山田 太郎" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <div class="form-label">会社名</div>
+          <input class="form-input" id="new-company" type="text" placeholder="株式会社○○" autocomplete="off">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <div class="form-label">役職</div>
+            <input class="form-input" id="new-title" type="text" placeholder="部長" autocomplete="off">
+          </div>
+          <div class="form-group">
+            <div class="form-label">部署</div>
+            <input class="form-input" id="new-dept" type="text" placeholder="営業部" autocomplete="off">
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">メール</div>
+          <input class="form-input" id="new-email" type="email" placeholder="taro@example.com" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <div class="form-label">電話</div>
+          <input class="form-input" id="new-phone" type="tel" placeholder="090-1234-5678" autocomplete="off">
+        </div>
+      </div>
+
+      <!-- 初期メモ -->
+      <div class="form-section">
+        <div class="form-label">初回メモ（音声 or テキスト）</div>
+        <textarea class="form-textarea" id="voice-memo-new" placeholder="商談での第一印象、気づいた点など...&#10;AIがある場合は自動で4分類します"
+          rows="5"></textarea>
+        <button class="voice-btn" id="voice-btn-new" style="margin-top:8px">
+          <span class="voice-icon">🎙️</span>音声入力
+        </button>
+      </div>
+
+      <div class="form-section">
+        <button class="btn-primary" id="btn-save-new">⚔️ 登録する</button>
+      </div>
+    </div>
+
+    <!-- ===================== 検索 ===================== -->
+    <div id="screen-search" class="screen">
+      <div class="page-header">
+        <h1 class="page-title">🔍 検索</h1>
+        <span id="search-count" style="font-size:13px;color:var(--text-muted)"></span>
+      </div>
+
+      <div class="search-bar-wrap">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" id="search-input" type="search" placeholder="名前・会社・趣味・出身地..." autocomplete="off">
+        </div>
+      </div>
+
+      <div class="filter-chips">
+        <button class="filter-chip active" data-filter="all">すべて</button>
+        <button class="filter-chip" data-filter="meeting">商談予定あり</button>
+        <button class="filter-chip" data-filter="jirai">💣 地雷あり</button>
+        <button class="filter-chip" data-filter="hook">🎣 フックあり</button>
+        <button class="filter-chip" data-filter="map">🕸️ 相関図あり</button>
+        <button class="filter-chip" data-filter="next">⚡ 次の一手あり</button>
+      </div>
+
+      <div class="section">
+        <div class="contact-list" id="search-results"></div>
+      </div>
+    </div>
+
+    <!-- ===================== 設定 ===================== -->
+    <div id="screen-settings" class="screen">
+      <div class="page-header">
+        <h1 class="page-title">⚙️ 設定</h1>
+      </div>
+
+      <div class="settings-screen">
+        <!-- Gemini AI -->
+        <div class="settings-group">
+          <div class="settings-group-label">AI連携</div>
+          <div class="settings-item" id="btn-set-apikey" role="button" tabindex="0">
+            <span class="settings-item-icon">🔑</span>
+            <span class="settings-item-label">Gemini APIキー</span>
+            <span class="settings-item-value" id="api-key-status-2">未設定</span>
+            <span class="settings-item-caret">›</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);padding:6px 4px;line-height:1.6">
+            設定すると名刺OCR・音声メモのAI分類・商談ブリーフィングが使えます。
+            キーはこのデバイスのブラウザにのみ保存されます。
+          </div>
+        </div>
+
+        <!-- 通知 -->
+        <div class="settings-group">
+          <div class="settings-group-label">通知</div>
+          <div class="settings-item">
+            <span class="settings-item-icon">🔔</span>
+            <span class="settings-item-label">プッシュ通知</span>
+            <span class="settings-item-value" id="notif-status">未確認</span>
+            <span class="settings-item-caret">›</span>
+          </div>
+          <button class="btn-secondary" id="btn-request-notif" style="margin-top:8px">通知を許可する</button>
+          <div style="font-size:12px;color:var(--text-muted);padding:6px 4px;line-height:1.6">
+            商談15分前に攻略メモを通知します。
+          </div>
+        </div>
+
+        <!-- アプリ情報 -->
+        <div class="settings-group">
+          <div class="settings-group-label">アプリ情報</div>
+          <div class="settings-item">
+            <span class="settings-item-icon">📱</span>
+            <span class="settings-item-label">Service Worker</span>
+            <span class="settings-item-value" id="sw-status">確認中</span>
+          </div>
+          <div class="settings-item">
+            <span class="settings-item-icon">🔒</span>
+            <span class="settings-item-label">データ保存先</span>
+            <span class="settings-item-value">このデバイスのみ</span>
+          </div>
+          <div class="settings-item">
+            <span class="settings-item-icon">🌐</span>
+            <span class="settings-item-label">外部送信</span>
+            <span class="settings-item-value" style="color:var(--green)">なし</span>
+          </div>
+          <div class="settings-item">
+            <span class="settings-item-icon">⚔️</span>
+            <span class="settings-item-label">バージョン</span>
+            <span class="settings-item-value">Sales侍 v1.0</span>
+          </div>
+        </div>
+
+        <!-- PWAインストール -->
+        <div class="settings-group">
+          <div class="settings-group-label">インストール</div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;padding:4px">
+            📱 <strong>iPhone/iPad</strong>: Safariで開き → 共有ボタン → 「ホーム画面に追加」<br>
+            💻 <strong>PC/Android</strong>: Chromeのアドレスバー横のインストールアイコンをクリック
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== ボトムナビ ===================== -->
+    <nav class="bottom-nav">
+      <button class="nav-item active" data-screen="home">
+        <span class="nav-icon">🏠</span>ホーム
+      </button>
+      <button class="nav-item" data-screen="search">
+        <span class="nav-icon">🔍</span>検索
+      </button>
+      <button class="nav-fab" id="fab-new">
+        <div class="nav-fab-inner">＋</div>
+        <span class="nav-fab-label">登録</span>
+      </button>
+      <button class="nav-item" data-screen="detail" style="display:none"></button>
+      <button class="nav-item" data-screen="settings">
+        <span class="nav-icon">⚙️</span>設定
+      </button>
+    </nav>
+
+  </div><!-- /#app -->
+
+  <!-- ===================== モーダル ===================== -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div id="modal-sheet" class="modal-sheet"></div>
+  </div>
+
+  <!-- ===================== トースト ===================== -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="./js/gemini.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+
+</html>

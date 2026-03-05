@@ -1,0 +1,38 @@
+{
+  "name": "うら名刺アプリ",
+  "short_name": "うら名刺",
+  "description": "会社には『進捗』スマホには『真実』を。営業マンの本音管理アプリ",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#1a0a2e",
+  "theme_color": "#9b59b6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "新規登録",
+      "short_name": "登録",
+      "description": "新しい人物を登録",
+      "url": "./?action=new",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
+}
